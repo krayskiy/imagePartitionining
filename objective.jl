@@ -1,5 +1,18 @@
 using LinearAlgebra
 
+g = zeros((5,5))
+g[3,3] = 0.5
+function gg(x, g, λ=1, α=1)  # Geman Geman energy. Equation 2 in chambolle1995
+    I, J = size(g)
+    E = 0
+    for i in 1:I-1
+        for j in 1:J-1
+            E += λ^2 * abs(f[i+1,j]-f[i,j])^2 * (1 - v) + λ^2 * abs(f[i,j+1]-f[i,j])^2 * (1 - h) + (h + v)
+        end
+    end
+    return E
+end
+
 function gg(x ; g, λ=1, α=1)
     """
     geman and geman loss function.
@@ -20,32 +33,13 @@ function gg(x ; g, λ=1, α=1)
     h = reshape(h, (imheight-1, imwidth))
 
     #print(size(f), size(v), size(h), size(g))
-
-
     E = 0
-    for i in 1:imheight
-        for j in 1:imwidth
-            if i != imheight && j != imwidth
-                # somewhere in the middle
-                E += λ^2 * (f[i+1, j] - f[i,j])^2 *(1 - h[i,j]) +
-                λ^2 * (f[i, j+1] - f[i,j])^2*(1 - v[i,j]) +
-                α*(h[i,j] + v[i,j]) +
-                (f[i,j] - g[i,j])^2
-            elseif i != imheight && j == imwidth
-                # right hand side
-                E += λ^2 * (f[i+1, j] - f[i,j])^2 *(1 - h[i,j]) +
-                α*h[i,j] +
-                (f[i,j] - g[i,j])^2
-            elseif i == imheight && j != imwidth
-                # bottom row
-                E += λ^2 * (f[i, j+1] - f[i,j])^2*(1-v[i,j]) +
-                α*v[i,j] +
-                (f[i,j] - g[i,j])^2
-            else
-                # bottom corner
-                E += (f[i,j] - g[i,j])^2
-            end
-            #print("i = ", i, " j = ", j, "\n")
+    for i in 1:imheight-1
+        for j in 1:imwidth-1
+            E += λ^2 * abs(f[i+1,j]-f[i,j])^2 * (1 - v[i, j]) + 
+            λ^2 * abs(f[i,j+1]-f[i,j])^2 * (1 - h[i, j]) + 
+            α*(h[i, j] + v[i, j]) + 
+            (f[i,j] - g[i,j])^2
         end
     end
     return E
@@ -220,26 +214,3 @@ function x_to_fhv(x, g)
     return (f,h,v)
 end
 
-
-# some basic tests. These numbers seem to decrease so hopefully I did the gradient
-# correctly.
-# x = rand(100+90+90);
-# g = rand(10,10)/10;
-# g[3:5, 4:7] = .75
-# f = rand(10,10);
-# h = rand(9, 10);
-# v = rand(10,9);
-# λ = 1;
-#
-# grad_test = ∇gg(x, g);
-# newx = x .- .0001*grad_test;
-#
-# print("f(x) = ", gg(x,g))
-# print("f(x - .0001*∇f(x))= ", gg(newx, g))
-#
-# for i in 1:1000
-#     print(gg(x,g), "\n")
-#     grad = ∇gg(x, g)
-#     x = x - .00001*grad
-#     #print("max(x) = ", maximum(x), "\n")
-# end
