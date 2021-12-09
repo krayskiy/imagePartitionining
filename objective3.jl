@@ -138,8 +138,12 @@ function p(h,v, ρ)
     This barrier is ρ[xlog(x) +(1-x)log(1-x)]
     Want ρ decreasing from maybe 1 to .1
     """
-    hCost = ρ .* sum(h .* log.(h) .+ (1 .- h).*log.(1 .- h) .+ log(2))
-    vCost = ρ .* sum(v .* log.(v) .+ (1 .- v).*log.(1 .- v) .+ log(2))
+    logh = real.(log.(Complex.(h)))
+    log1h = real.(log.(Complex.(1 .- h)))
+    logv = real.(log.(Complex.(v)))
+    log1v = real.(log.(Complex.(1 .- v)))
+    hCost = ρ .* sum(h .* logh .+ (1 .- h).*log1h .+ log(2))
+    vCost = ρ .* sum(v .* logv .+ (1 .- v).*log1v .+ log(2))
     return vCost + hCost
 end
 
@@ -147,8 +151,13 @@ function ∇p(h,v, ρ)
     """
     log(.1) = -2.3, log(.01) = -4.6
     """
-    ∇v = ρ .* (log.(v) .- log.(1 .- v))
-    ∇h = ρ .* (log.(h) .- log.(1 .- h))
+    logh = real.(log.(Complex.(h)))
+    log1h = real.(log.(Complex.(1 .- h)))
+    logv = real.(log.(Complex.(v)))
+    log1v = real.(log.(Complex.(1 .- v)))
+
+    ∇v = ρ .* (logv .- log1v)
+    ∇h = ρ .* (logh .- log1h)
     return ∇h, ∇v
 end
 
@@ -158,8 +167,13 @@ function q(h,v, ρ)
     This barrier is ρ[-log(x) - log(1-x)]
     Want ρ decreasing from maybe 1 to .1
     """
-    hCost = -ρ .* sum(log.(h) .+ log.(1 .- h) .+ 2*log(2))
-    vCost = -ρ .* sum(log.(v) .+ log.(1 .- v) .+ 2*log(2))
+    logh = real.(log.(Complex.(h)))
+    log1h = real.(log.(Complex.(1 .- h)))
+    logv = real.(log.(Complex.(v)))
+    log1v = real.(log.(Complex.(1 .- v)))
+
+    hCost = -ρ .* sum(logh .+ log1h .+ 2*log(2))
+    vCost = -ρ .* sum(logv .+ log1v .+ 2*log(2))
     return vCost + hCost
 end
 
@@ -245,10 +259,10 @@ function interior_point(ggloss, ∇ggloss, b, ∇b, f, h, v, λs, ρs, αws, im)
         αw = αws[j]
         f, h, v = minimize(ggloss, ∇ggloss, b, ∇b, f, h, v, λ, ρ, αw, im)
         ∇f, ∇h, ∇v = ∇ggloss(f,h,v; image=im, λ=λ, αw=αw)
-        print("\n\nρ = ", ρ, " done\n")
-        print("norm(∇f) = ", norm(∇f), "\n")
-        print("norm(∇h) = ", norm(∇h), "\n")
-        print("norm(∇v) = ", norm(∇v), "\n")
+        # print("\n\nρ = ", ρ, " done\n")
+        # print("norm(∇f) = ", norm(∇f), "\n")
+        # print("norm(∇h) = ", norm(∇h), "\n")
+        # print("norm(∇v) = ", norm(∇v), "\n")
         # cc = 0.9
         # im = cc .* im .+ (1 - cc) .* f
     end
@@ -258,49 +272,49 @@ end
 
 # ##some basic tests. These numbers seem to decrease so hopefully I did the gradient correctly.
 
-img = load("./im1/1638815998.png")
-imgg = Gray.(img);
-im = transpose(convert(Array{Float64}, imgg));
-imheight, imwidth = size(im)
-
-# ###### Starting Point of optimization
-# f = rand(imheight, imwidth);
-# h = rand(imheight- 1, imwidth-1);
-# v = rand(imheight - 1, imwidth - 1);
-f = .5 .+ randn(imheight, imwidth)/10;
-h = .5 .+ randn(imheight-1, imwidth)/10;
-v = .5 .+ randn(imheight, imwidth-1)/10;
-
-#λ = .5;
-# ρ = 2; # also progress to small rho (.001)
-#αw = .02; # want large alpha in the beginning, and progress to small alpha
-# f,h,v = minimize(gg, ∇gg, q, ∇q, f, h, v, λ, ρ, αw, im)
-# λ =1, ρ=.1, αw = 1 sort of works.
-# λ =1, ρ=.1, αw = .1 sort of works.
-# λ =10, ρ=.1, αw = 10 does not work - at all.
-# λ =1, ρ=.01, αw = .1 does not work.
-# using q: λ= .5,rho = .001, αw = .04 is good!
-
-
-# ### Interior Point
-niters = 7
-ρs = [1.5625*.2^k for k in 2:niters]
-αws = repeat([.001], niters-1) # .005 seems to work with p, .002 seems to work well with q.
-λs = repeat([.3], niters - 1)
-f,h,v = interior_point(gg, ∇gg, q, ∇q, f, h, v, λs, ρs, αws, im)
-
-# ### One round of minimize
-# λ = .5
-# ρ = .0001
-# αw = .005
-# f,h,v = minimize(gg, ∇gg, q, ∇q, f, h, v, λ, ρ, αw, im);
-
-edge_image = 1 .- max.(v[1:29, 1:29],h[1:29, 1:29])
-edge_image_binary = edge_image .> .5
-
-mosaic(colorview(Gray, im),
-colorview(Gray, f),
-colorview(Gray, v),
-colorview(Gray, h),
-colorview(Gray, edge_image),
-colorview(Gray, edge_image_binary))
+# img = load("./im1/1638815998.png")
+# imgg = Gray.(img);
+# im = transpose(convert(Array{Float64}, imgg));
+# imheight, imwidth = size(im)
+#
+# # ###### Starting Point of optimization
+# # f = rand(imheight, imwidth);
+# # h = rand(imheight- 1, imwidth-1);
+# # v = rand(imheight - 1, imwidth - 1);
+# f = .5 .+ randn(imheight, imwidth)/10;
+# h = .5 .+ randn(imheight-1, imwidth)/10;
+# v = .5 .+ randn(imheight, imwidth-1)/10;
+#
+# #λ = .5;
+# # ρ = 2; # also progress to small rho (.001)
+# #αw = .02; # want large alpha in the beginning, and progress to small alpha
+# # f,h,v = minimize(gg, ∇gg, q, ∇q, f, h, v, λ, ρ, αw, im)
+# # λ =1, ρ=.1, αw = 1 sort of works.
+# # λ =1, ρ=.1, αw = .1 sort of works.
+# # λ =10, ρ=.1, αw = 10 does not work - at all.
+# # λ =1, ρ=.01, αw = .1 does not work.
+# # using q: λ= .5,rho = .001, αw = .04 is good!
+#
+#
+# # ### Interior Point
+# niters = 7
+# ρs = [1.5625*.2^k for k in 2:niters]
+# αws = repeat([.001], niters-1) # .005 seems to work with p, .002 seems to work well with q.
+# λs = repeat([.3], niters - 1)
+# f,h,v = interior_point(gg, ∇gg, q, ∇q, f, h, v, λs, ρs, αws, im)
+#
+# # ### One round of minimize
+# # λ = .5
+# # ρ = .0001
+# # αw = .005
+# # f,h,v = minimize(gg, ∇gg, q, ∇q, f, h, v, λ, ρ, αw, im);
+#
+# edge_image = 1 .- max.(v[1:29, 1:29],h[1:29, 1:29])
+# edge_image_binary = edge_image .> .5
+#
+# mosaic(colorview(Gray, im),
+# colorview(Gray, f),
+# colorview(Gray, v),
+# colorview(Gray, h),
+# colorview(Gray, edge_image),
+# colorview(Gray, edge_image_binary))
