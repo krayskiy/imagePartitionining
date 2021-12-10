@@ -235,11 +235,11 @@ function minimize(ggloss, ∇ggloss, b, ∇b, f, h, v, λ, ρ, αw, im)
                 j += 1
             end
         end
-        # print("exited at j = ", j, "\n")
-        # print("Selected α = ", α, "\n")
-        # print("norm(∇f) = ", norm(∇f), "\n")
-        # print("norm(∇h) = ", norm(∇h), "\n")
-        # print("norm(∇v) = ", norm(∇v), "\n")
+#         print("exited at j = ", j, "\n")
+#         print("Selected α = ", α, "\n")
+#         print("norm(∇f) = ", norm(∇f), "\n")
+#         print("norm(∇h) = ", norm(∇h), "\n")
+#         print("norm(∇v) = ", norm(∇v), "\n")
         f = f .- α*∇f
         h = h .- α*∇h
         v = v .- α*∇v
@@ -259,10 +259,10 @@ function interior_point(ggloss, ∇ggloss, b, ∇b, f, h, v, λs, ρs, αws, im)
         αw = αws[j]
         f, h, v = minimize(ggloss, ∇ggloss, b, ∇b, f, h, v, λ, ρ, αw, im)
         ∇f, ∇h, ∇v = ∇ggloss(f,h,v; image=im, λ=λ, αw=αw)
-        # print("\n\nρ = ", ρ, " done\n")
-        # print("norm(∇f) = ", norm(∇f), "\n")
-        # print("norm(∇h) = ", norm(∇h), "\n")
-        # print("norm(∇v) = ", norm(∇v), "\n")
+        print("\n\nρ = ", ρ, " done\n")
+        print("norm(∇f) = ", norm(∇f), "\n")
+        print("norm(∇h) = ", norm(∇h), "\n")
+        print("norm(∇v) = ", norm(∇v), "\n")
         # cc = 0.9
         # im = cc .* im .+ (1 - cc) .* f
     end
@@ -272,7 +272,7 @@ end
 
 # ##some basic tests. These numbers seem to decrease so hopefully I did the gradient correctly.
 
-# img = load("./im1/1638815998.png")
+# img = load("./images2/im5.png")
 # imgg = Gray.(img);
 # im = transpose(convert(Array{Float64}, imgg));
 # imheight, imwidth = size(im)
@@ -299,8 +299,8 @@ end
 # # ### Interior Point
 # niters = 7
 # ρs = [1.5625*.2^k for k in 2:niters]
-# αws = repeat([.001], niters-1) # .005 seems to work with p, .002 seems to work well with q.
-# λs = repeat([.3], niters - 1)
+# αws = repeat([.005], niters-1) # .005 seems to work with p, .002 seems to work well with q.
+# λs = repeat([1.1], niters - 1)
 # f,h,v = interior_point(gg, ∇gg, q, ∇q, f, h, v, λs, ρs, αws, im)
 #
 # # ### One round of minimize
